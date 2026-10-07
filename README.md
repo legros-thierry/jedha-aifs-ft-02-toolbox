@@ -1,10 +1,10 @@
 # Toolbox – JEDHA AI Fullstack FT-02
 
-Snippets VS Code et templates partagés entre nous.
+Snippets VS Code, templates et autres partagés entre nous.
 
-## Règles
+## Règles pour s'y retrouvé si on est plusieurs à pousser des snippets
 - Un fichier de snippets par personne : `snippets/<prenom>-<theme>.code-snippets`
-- Chacun son préfixe (ex. `ml-` pour Thierry) pour éviter les doublons
+- Chacun son préfixe (ex. `thierry-ml.` pour Thierry) pour éviter les doublons
 - Uniquement notre propre code : pas d'énoncés ni de corrigés JEDHA
 - Jamais de clé d'API ni de fichier `.env`
 - `git pull` avant chaque `git push`
@@ -17,6 +17,7 @@ Dans une cellule Python, taper le préfixe puis Tab.
 - `snippets/` : fichiers `.code-snippets`
 - `templates/` : fichiers `.py` réutilisables
 - `notebooks/` : exemples perso
+- autres a créer
 
 ## Contribuer
 1. Cliquer **Fork** (en haut à droite) pour copier le dépôt sur son compte
