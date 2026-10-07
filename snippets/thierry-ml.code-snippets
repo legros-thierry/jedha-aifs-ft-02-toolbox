@@ -1,0 +1,1186 @@
+{
+  "ML · Imports de base": {
+    "scope": "python",
+    "prefix": "ml-imports",
+    "description": "Imports pandas, numpy, sklearn (preprocessing, modèles, métriques), plotly, display",
+    "body": [
+      "import numpy as np",
+      "import pandas as pd",
+      "import plotly.express as px",
+      "from IPython.display import display",
+      "from sklearn.compose import ColumnTransformer",
+      "from sklearn.impute import SimpleImputer",
+      "from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge",
+      "from sklearn.metrics import accuracy_score, r2_score",
+      "from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split",
+      "from sklearn.pipeline import Pipeline",
+      "from sklearn.preprocessing import (",
+      "    LabelEncoder,",
+      "    OneHotEncoder,",
+      "    PolynomialFeatures,",
+      "    StandardScaler,",
+      ")",
+      "$0"
+    ]
+  },
+
+  "ML · Charger + EDA rapide": {
+    "scope": "python",
+    "prefix": "ml-load",
+    "description": "read_csv, shape, describe, % de NaN par colonne",
+    "body": [
+      "${1:dataset} = pd.read_csv('${2:src/data.csv}')",
+      "print(${1:dataset}.shape)",
+      "display(${1:dataset}.head())",
+      "display(${1:dataset}.describe(include='all'))",
+      "display((${1:dataset}.isnull().mean() * 100).round(1).sort_values(ascending=False))",
+      "$0"
+    ]
+  },
+
+  "ML · % de valeurs manquantes": {
+    "scope": "python",
+    "prefix": "ml-nan",
+    "description": "% de NaN par colonne, trié",
+    "body": [
+      "(${1:dataset}.isnull().mean() * 100).round(1).sort_values(ascending=False)$0"
+    ]
+  },
+
+  "ML · Supprimer les colonnes Unnamed": {
+    "scope": "python",
+    "prefix": "ml-unnamed",
+    "description": "Retire les colonnes 'Unnamed: x' (index sauvegardé dans le CSV)",
+    "body": [
+      "cols_unnamed = [col for col in ${1:dataset}.columns if col.startswith('Unnamed')]",
+      "${1:dataset} = ${1:dataset}.drop(columns=cols_unnamed)",
+      "$0"
+    ]
+  },
+
+  "ML · Supprimer des colonnes": {
+    "scope": "python",
+    "prefix": "ml-dropcols",
+    "description": "Drop colonnes inutiles : ID, constante, > 60 % NaN, colinéaires",
+    "body": [
+      "useless_cols = [${1:'id'}]",
+      "${2:dataset} = ${2:dataset}.drop(columns=useless_cols)",
+      "$0"
+    ]
+  },
+
+  "ML · Outliers (masque qui garde les NaN)": {
+    "scope": "python",
+    "prefix": "ml-outlier",
+    "description": "Filtre une condition en conservant les NaN (l'imputer s'en chargera)",
+    "body": [
+      "to_keep = (${1:dataset}['${2:Age}'] ${3:> 0}) | (${1:dataset}['${2:Age}'].isnull())",
+      "${1:dataset} = ${1:dataset}.loc[to_keep, :]",
+      "print('Lignes restantes :', ${1:dataset}.shape[0])",
+      "$0"
+    ]
+  },
+
+  "ML · Corrélations (heatmap)": {
+    "scope": "python",
+    "prefix": "ml-corr",
+    "description": "Matrice de corrélation des colonnes numériques",
+    "body": [
+      "corr = ${1:dataset}.corr(numeric_only=True).round(2)",
+      "px.imshow(corr, text_auto=True, color_continuous_scale='RdBu_r', zmin=-1, zmax=1).show()",
+      "$0"
+    ]
+  },
+
+  "ML · Séparer X / Y": {
+    "scope": "python",
+    "prefix": "ml-xy",
+    "description": "Y = cible, X = tout le reste",
+    "body": [
+      "target = '${1:Salary}'",
+      "${2:dataset} = ${2:dataset}.dropna(subset=[target])",
+      "Y = ${2:dataset}[target]",
+      "X = ${2:dataset}.drop(columns=[target])",
+      "$0"
+    ]
+  },
+
+  "ML · Détecter colonnes num / cat": {
+    "scope": "python",
+    "prefix": "ml-types",
+    "description": "Listes numeric_features / categorical_features automatiques",
+    "body": [
+      "numeric_features = X.select_dtypes(include='number').columns.tolist()",
+      "categorical_features = X.select_dtypes(exclude='number').columns.tolist()",
+      "print('Num :', numeric_features)",
+      "print('Cat :', categorical_features)",
+      "$0"
+    ]
+  },
+
+  "ML · Train / test split": {
+    "scope": "python",
+    "prefix": "ml-split",
+    "description": "train_test_split AVANT tout fit (stratify=Y en classification seulement)",
+    "body": [
+      "X_train, X_test, Y_train, Y_test = train_test_split(",
+      "    X, Y, test_size=${1:0.2}, random_state=${2:0}",
+      ")",
+      "# Classification uniquement : ajouter stratify=Y (garde les proportions de classes)",
+      "$0"
+    ]
+  },
+
+  "ML · Preprocessor (ColumnTransformer complet)": {
+    "scope": "python",
+    "prefix": "ml-preproc",
+    "description": "Briques → pipelines num / cat → ColumnTransformer",
+    "body": [
+      "# Briques",
+      "numeric_imputer = SimpleImputer(strategy='${1|median,mean|}')",
+      "standard_scaler = StandardScaler()",
+      "categoric_imputer = SimpleImputer(strategy='most_frequent')",
+      "one_hot_encoder = OneHotEncoder(drop='first', handle_unknown='ignore')",
+      "",
+      "# Pipelines",
+      "numeric_pipeline = Pipeline([",
+      "    ('num_imputer', numeric_imputer),",
+      "    ('scaler', standard_scaler),",
+      "])",
+      "categoric_pipeline = Pipeline([",
+      "    ('cat_imputer', categoric_imputer),",
+      "    ('encoder', one_hot_encoder),",
+      "])",
+      "",
+      "# Aiguillage",
+      "preprocessor = ColumnTransformer([",
+      "    ('num', numeric_pipeline, numeric_features),",
+      "    ('cat', categoric_pipeline, categorical_features),",
+      "])",
+      "$0"
+    ]
+  },
+
+  "ML · Appliquer le preprocessor": {
+    "scope": "python",
+    "prefix": "ml-transform",
+    "description": "fit_transform sur train, transform seul sur test (jamais de fit sur test)",
+    "body": [
+      "X_train_p = preprocessor.fit_transform(X_train)",
+      "X_test_p = preprocessor.transform(X_test)",
+      "print(X_train_p[0:5])  # np.array → pas de .head()",
+      "$0"
+    ]
+  },
+
+  "ML · Encoder Y catégorielle": {
+    "scope": "python",
+    "prefix": "ml-labelenc",
+    "description": "LabelEncoder : fit sur train, transform sur test",
+    "body": [
+      "label_encoder = LabelEncoder()",
+      "Y_train = label_encoder.fit_transform(Y_train)",
+      "Y_test = label_encoder.transform(Y_test)",
+      "$0"
+    ]
+  },
+
+  "ML · Polynomial features": {
+    "scope": "python",
+    "prefix": "ml-poly",
+    "description": "Ajoute puissances et interactions (après preprocessing)",
+    "body": [
+      "poly = PolynomialFeatures(degree=${1:2}, include_bias=False)",
+      "X_train_p = poly.fit_transform(X_train_p)",
+      "X_test_p = poly.transform(X_test_p)",
+      "print('Nb de colonnes :', X_train_p.shape[1])",
+      "$0"
+    ]
+  },
+
+  "ML · Régression linéaire + R²": {
+    "scope": "python",
+    "prefix": "ml-linreg",
+    "description": "LinearRegression, fit, R² train / test",
+    "body": [
+      "${1:model} = LinearRegression()",
+      "${1:model}.fit(X_train_p, Y_train)",
+      "print(f'R² train : {${1:model}.score(X_train_p, Y_train):.3f}')",
+      "print(f'R² test  : {${1:model}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · R² train / test + écart": {
+    "scope": "python",
+    "prefix": "ml-r2",
+    "description": "Diagnostic over / underfit",
+    "body": [
+      "r2_train = ${1:model}.score(${2:X_train_p}, Y_train)",
+      "r2_test = ${1:model}.score(${3:X_test_p}, Y_test)",
+      "print(f'R² train : {r2_train:.3f} | R² test : {r2_test:.3f} | écart : {r2_train - r2_test:.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Coefficients triés": {
+    "scope": "python",
+    "prefix": "ml-coefs",
+    "description": "β par colonne, triés par valeur absolue, + bar chart",
+    "body": [
+      "coefs = pd.DataFrame({'coef': ${1:model}.coef_}, index=${2:preprocessor}.get_feature_names_out())",
+      "coefs = coefs.reindex(coefs['coef'].abs().sort_values().index)",
+      "px.bar(coefs, x='coef', orientation='h').show()",
+      "$0"
+    ]
+  },
+
+  "ML · Ridge": {
+    "scope": "python",
+    "prefix": "ml-ridge",
+    "description": "Ridge (L2) : réduit tous les β",
+    "body": [
+      "${1:ridge} = Ridge(alpha=${2:1.0})",
+      "${1:ridge}.fit(X_train_p, Y_train)",
+      "print(f'R² train : {${1:ridge}.score(X_train_p, Y_train):.3f} | R² test : {${1:ridge}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Lasso": {
+    "scope": "python",
+    "prefix": "ml-lasso",
+    "description": "Lasso (L1) : met des β à 0",
+    "body": [
+      "${1:lasso} = Lasso(alpha=${2:1.0}, max_iter=10000)",
+      "${1:lasso}.fit(X_train_p, Y_train)",
+      "print(f'R² train : {${1:lasso}.score(X_train_p, Y_train):.3f} | R² test : {${1:lasso}.score(X_test_p, Y_test):.3f}')",
+      "print('β à zéro :', (${1:lasso}.coef_ == 0).sum(), '/', ${1:lasso}.coef_.size)",
+      "$0"
+    ]
+  },
+
+  "ML · Validation croisée": {
+    "scope": "python",
+    "prefix": "ml-cv",
+    "description": "cross_val_score : moyenne + écart-type",
+    "body": [
+      "scores = cross_val_score(${1:Ridge()}, X_train_p, Y_train, cv=${2:5})",
+      "print(f'R² CV : {scores.mean():.3f} ± {scores.std():.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search": {
+    "scope": "python",
+    "prefix": "ml-grid",
+    "description": "GridSearchCV sur alpha (échelle log), meilleur modèle, score test",
+    "body": [
+      "params = {'alpha': [0.01, 0.1, 1, 10, 100, 1000]}",
+      "gridsearch = GridSearchCV(${1:Ridge()}, param_grid=params, cv=${2:5}, n_jobs=-1)",
+      "gridsearch.fit(X_train_p, Y_train)",
+      "print('Meilleur alpha :', gridsearch.best_params_)",
+      "print(f'R² CV  : {gridsearch.best_score_:.3f}')",
+      "print(f'R² test : {gridsearch.score(X_test_p, Y_test):.3f}')",
+      "# ⚠️ si le meilleur alpha est au bord de la grille → élargir la grille",
+      "$0"
+    ]
+  },
+
+  "ML · Pipeline complet + grid search (version propre)": {
+    "scope": "python",
+    "prefix": "ml-pipegrid",
+    "description": "Preprocessing + modèle dans un seul Pipeline, grid search sans fuite",
+    "body": [
+      "full_pipeline = Pipeline([",
+      "    ('pre', preprocessor),",
+      "    ('model', ${1:Ridge()}),",
+      "])",
+      "params = {'model__alpha': [0.01, 0.1, 1, 10, 100, 1000]}",
+      "gridsearch = GridSearchCV(full_pipeline, param_grid=params, cv=${2:5}, n_jobs=-1)",
+      "gridsearch.fit(X_train, Y_train)  # X brut : le pipeline fait le preprocessing",
+      "print('Meilleur alpha :', gridsearch.best_params_)",
+      "print(f'R² CV  : {gridsearch.best_score_:.3f}')",
+      "print(f'R² test : {gridsearch.score(X_test, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Imports classification / arbres": {
+    "scope": "python",
+    "prefix": "ml-imports-clf",
+    "description": "Imports pour la classification : arbres, forêt, métriques, matrice de confusion, ROC",
+    "body": [
+      "import matplotlib.pyplot as plt",
+      "from sklearn.ensemble import RandomForestClassifier",
+      "from sklearn.metrics import (",
+      "    ConfusionMatrixDisplay,",
+      "    RocCurveDisplay,",
+      "    accuracy_score,",
+      "    f1_score,",
+      "    precision_score,",
+      "    recall_score,",
+      "    roc_auc_score,",
+      ")",
+      "from sklearn.tree import DecisionTreeClassifier",
+      "$0"
+    ]
+  },
+
+  "ML · Régression logistique + prédictions": {
+    "scope": "python",
+    "prefix": "ml-logreg",
+    "description": "LogisticRegression, fit, classes prédites, probabilités, accuracy train / test",
+    "body": [
+      "${1:logreg} = LogisticRegression(max_iter=1000)",
+      "${1:logreg}.fit(X_train_p, Y_train)",
+      "Y_train_pred = ${1:logreg}.predict(X_train_p)",
+      "Y_test_pred = ${1:logreg}.predict(X_test_p)",
+      "Y_train_proba = ${1:logreg}.predict_proba(X_train_p)  # 2 colonnes : P(classe 0), P(classe 1)",
+      "Y_test_proba = ${1:logreg}.predict_proba(X_test_p)",
+      "print(f'accuracy train : {${1:logreg}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:logreg}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Métriques de classification (fonction)": {
+    "scope": "python",
+    "prefix": "ml-metrics",
+    "description": "compute_metrics : accuracy, precision, recall, F1, AUC (classification binaire) + dictionnaire results",
+    "body": [
+      "def compute_metrics(model, X, Y):",
+      "    Y_pred = model.predict(X)",
+      "    Y_proba = model.predict_proba(X)[:, 1]  # probabilité de la classe 1",
+      "    return {",
+      "        'accuracy': accuracy_score(Y, Y_pred),",
+      "        'precision': precision_score(Y, Y_pred),",
+      "        'recall': recall_score(Y, Y_pred),",
+      "        'f1': f1_score(Y, Y_pred),",
+      "        'auc': roc_auc_score(Y, Y_proba),",
+      "    }",
+      "",
+      "",
+      "results = {}",
+      "results['${1:Logistic regression}'] = compute_metrics(${2:logreg}, X_test_p, Y_test)",
+      "display(pd.DataFrame(results).T.round(3))  # une ligne par modèle",
+      "$0"
+    ]
+  },
+
+  "ML · Matrices de confusion train / test": {
+    "scope": "python",
+    "prefix": "ml-confusion",
+    "description": "ConfusionMatrixDisplay sur train et test, présentation JEDHA : réel en vertical (0 en bas, 1 en haut), prédit en horizontal",
+    "body": [
+      "_, ax = plt.subplots()",
+      "ax.set(title='Confusion Matrix on Train set')",
+      "ConfusionMatrixDisplay.from_estimator(${1:logreg}, X_train_p, Y_train, ax=ax)",
+      "ax.invert_yaxis()  # 0 en bas, 1 en haut → pannes trouvées (réel 1, prédit 1) en haut à droite",
+      "plt.show()",
+      "",
+      "_, ax = plt.subplots()",
+      "ax.set(title='Confusion Matrix on Test set')",
+      "ConfusionMatrixDisplay.from_estimator(${1:logreg}, X_test_p, Y_test, ax=ax)",
+      "ax.invert_yaxis()  # 0 en bas, 1 en haut → pannes trouvées (réel 1, prédit 1) en haut à droite",
+      "plt.show()",
+      "$0"
+    ]
+  },
+
+  "ML · Courbes ROC train / test": {
+    "scope": "python",
+    "prefix": "ml-roc",
+    "description": "RocCurveDisplay sur train et test (AUC affichée dans la légende)",
+    "body": [
+      "_, ax = plt.subplots()",
+      "ax.set(title='ROC Curve on Train set')",
+      "RocCurveDisplay.from_estimator(${1:logreg}, X_train_p, Y_train, ax=ax)",
+      "plt.show()",
+      "",
+      "_, ax = plt.subplots()",
+      "ax.set(title='ROC Curve on Test set')",
+      "RocCurveDisplay.from_estimator(${1:logreg}, X_test_p, Y_test, ax=ax)",
+      "plt.show()",
+      "$0"
+    ]
+  },
+
+  "ML · Arbre de décision": {
+    "scope": "python",
+    "prefix": "ml-tree",
+    "description": "DecisionTreeClassifier sans limite : accuracy train / test + écart (surapprentissage ?)",
+    "body": [
+      "${1:tree} = DecisionTreeClassifier(random_state=${2:0})",
+      "${1:tree}.fit(X_train_p, Y_train)",
+      "acc_train = ${1:tree}.score(X_train_p, Y_train)",
+      "acc_test = ${1:tree}.score(X_test_p, Y_test)",
+      "print(f'accuracy train : {acc_train:.3f} | test : {acc_test:.3f} | écart : {acc_train - acc_test:.3f}')",
+      "# Pas de StandardScaler nécessaire pour les arbres. Gros écart → limiter l'arbre (ml-gridtree)",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search arbre de décision": {
+    "scope": "python",
+    "prefix": "ml-gridtree",
+    "description": "GridSearchCV sur max_depth, min_samples_leaf, min_samples_split",
+    "body": [
+      "params = {",
+      "    'max_depth': [4, 6, 8, 10],",
+      "    'min_samples_leaf': [1, 2, 5],",
+      "    'min_samples_split': [2, 4, 8],",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    DecisionTreeClassifier(random_state=${2:0}), param_grid=params, cv=${3:3}",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search Random Forest": {
+    "scope": "python",
+    "prefix": "ml-forest",
+    "description": "GridSearchCV RandomForestClassifier avec n_estimators (combinaisons × cv entraînements)",
+    "body": [
+      "params = {",
+      "    'max_depth': [2, 4, 6, 8, 10],",
+      "    'min_samples_leaf': [1, 2, 5],",
+      "    'min_samples_split': [2, 4, 8],",
+      "    'n_estimators': [10, 20, 40, 60, 80, 100],",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    RandomForestClassifier(random_state=${2:0}), param_grid=params, cv=${3:3}, n_jobs=-1",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Importance des features": {
+    "scope": "python",
+    "prefix": "ml-featimp",
+    "description": "feature_importances_ du meilleur modèle d'un grid search (arbre ou forêt) + bar chart",
+    "body": [
+      "feature_importance = pd.DataFrame(",
+      "    {'feature_importances': ${1:gridsearch}.best_estimator_.feature_importances_},",
+      "    index=${2:preprocessor}.get_feature_names_out(),",
+      ").sort_values(by='feature_importances')",
+      "px.bar(feature_importance, x='feature_importances', orientation='h').show()",
+      "# Modèle entraîné sans grid search : ${3:model}.feature_importances_ (sans best_estimator_)",
+      "$0"
+    ]
+  },
+
+  "ML · Imports méthodes d'ensemble": {
+    "scope": "python",
+    "prefix": "ml-imports-ens",
+    "description": "Imports bagging, boosting (AdaBoost, GradientBoosting, XGBoost), voting, stacking, SVC. Complète ml-imports et ml-imports-clf",
+    "body": [
+      "from sklearn.ensemble import (",
+      "    AdaBoostClassifier,",
+      "    BaggingClassifier,",
+      "    GradientBoostingClassifier,",
+      "    StackingClassifier,",
+      "    VotingClassifier,",
+      ")",
+      "from sklearn.svm import SVC",
+      "from xgboost import XGBClassifier  # uv add xgboost",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search Bagging": {
+    "scope": "python",
+    "prefix": "ml-bagging",
+    "description": "BaggingClassifier sur un arbre : modèles en parallèle, chacun sur un échantillon tiré avec remise. Préfixe estimator__ pour régler le modèle de base",
+    "body": [
+      "params = {",
+      "    'estimator__max_depth': [1, 2, 3],  # estimator__ = paramètre du modèle de base",
+      "    'estimator__min_samples_leaf': [1, 2, 3],",
+      "    'n_estimators': [5, 10, 20, 30],  # sans préfixe = paramètre de l'ensemble",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    BaggingClassifier(estimator=DecisionTreeClassifier(), random_state=${2:0}),",
+      "    param_grid=params,",
+      "    cv=${3:3},",
+      "    n_jobs=-1,",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search AdaBoost": {
+    "scope": "python",
+    "prefix": "ml-adaboost",
+    "description": "AdaBoostClassifier sur de très petits arbres : modèles en série, les lignes ratées pèsent plus lourd au tour suivant",
+    "body": [
+      "params = {",
+      "    'estimator__max_depth': [1, 2, 3],  # arbres très petits (modèles faibles)",
+      "    'n_estimators': [10, 20, 50, 100],  # nombre de tours",
+      "    'learning_rate': [0.1, 0.5, 1.0],  # poids de chaque tour",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    AdaBoostClassifier(estimator=DecisionTreeClassifier(), random_state=${2:0}),",
+      "    param_grid=params,",
+      "    cv=${3:3},",
+      "    n_jobs=-1,",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search Gradient Boosting (sklearn)": {
+    "scope": "python",
+    "prefix": "ml-gboost",
+    "description": "GradientBoostingClassifier : chaque nouvel arbre apprend les résidus des précédents. Arbres uniquement, donc pas de préfixe estimator__",
+    "body": [
+      "params = {",
+      "    'max_depth': [1, 2, 3],",
+      "    'n_estimators': [20, 50, 100],  # nombre d'arbres ajoutés",
+      "    'learning_rate': [0.05, 0.1, 0.3],  # taille de chaque correction",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    GradientBoostingClassifier(random_state=${2:0}), param_grid=params, cv=${3:3}, n_jobs=-1",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Grid search XGBoost": {
+    "scope": "python",
+    "prefix": "ml-xgb",
+    "description": "XGBClassifier (API scikit-learn) : gradient boosting optimisé. Y doit être encodée en 0, 1, 2 (ml-labelenc)",
+    "body": [
+      "params = {",
+      "    'max_depth': [2, 4, 6],",
+      "    'min_child_weight': [1, 2, 3],  # proche de min_samples_leaf",
+      "    'n_estimators': [20, 50, 100],",
+      "    'learning_rate': [0.05, 0.1, 0.3],",
+      "}",
+      "${1:gridsearch} = GridSearchCV(",
+      "    XGBClassifier(random_state=${2:0}), param_grid=params, cv=${3:3}, n_jobs=-1",
+      ")",
+      "${1:gridsearch}.fit(X_train_p, Y_train)",
+      "print('Meilleurs paramètres :', ${1:gridsearch}.best_params_)",
+      "print(f'accuracy CV    : {${1:gridsearch}.best_score_:.3f}')",
+      "print(f'accuracy train : {${1:gridsearch}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:gridsearch}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Voting": {
+    "scope": "python",
+    "prefix": "ml-voting",
+    "description": "VotingClassifier : des modèles de types différents, déjà réglés, votent. soft = moyenne des probabilités",
+    "body": [
+      "# Modèles déjà réglés : passer best_estimator_ (sinon le grid search est relancé à chaque fit)",
+      "${1:voting} = VotingClassifier(",
+      "    estimators=[",
+      "        ('logistic', ${2:gridsearch_logreg}.best_estimator_),",
+      "        ('tree', ${3:gridsearch_tree}.best_estimator_),",
+      "        ('svm', ${4:gridsearch_svm}.best_estimator_),  # SVC(probability=True) obligatoire en soft",
+      "    ],",
+      "    voting='${5|soft,hard|}',  # soft : moyenne des probabilités | hard : vote des classes",
+      ")",
+      "${1:voting}.fit(X_train_p, Y_train)",
+      "print(f'accuracy train : {${1:voting}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:voting}.score(X_test_p, Y_test):.3f}')",
+      "$0"
+    ]
+  },
+
+  "ML · Stacking + corrélation des modèles": {
+    "scope": "python",
+    "prefix": "ml-stacking",
+    "description": "StackingClassifier : un méta-modèle apprend à combiner les prédictions des modèles de base. Affiche la corrélation entre modèles (classification binaire)",
+    "body": [
+      "${1:stacking} = StackingClassifier(",
+      "    estimators=[",
+      "        ('logistic', ${2:gridsearch_logreg}.best_estimator_),",
+      "        ('tree', ${3:gridsearch_tree}.best_estimator_),",
+      "        ('svm', ${4:gridsearch_svm}.best_estimator_),",
+      "    ],",
+      "    final_estimator=${5:LogisticRegression()},  # le méta-modèle (arbitre)",
+      "    cv=${6:3},",
+      ")",
+      "${1:stacking}.fit(X_train_p, Y_train)",
+      "print(f'accuracy train : {${1:stacking}.score(X_train_p, Y_train):.3f}')",
+      "print(f'accuracy test  : {${1:stacking}.score(X_test_p, Y_test):.3f}')",
+      "",
+      "# Prédictions des modèles de base : une colonne par modèle (cible binaire)",
+      "predictions = pd.DataFrame(",
+      "    ${1:stacking}.transform(X_train_p), columns=list(${1:stacking}.named_estimators_.keys())",
+      ")",
+      "display(predictions.corr().round(2))  # deux modèles très corrélés : en retirer un",
+      "$0"
+    ]
+  },
+
+  "ML · Tableau comparatif des modèles": {
+    "scope": "python",
+    "prefix": "ml-compare",
+    "description": "Une ligne par modèle : accuracy train / test, écart (surapprentissage), F1 test. Trié par accuracy test",
+    "body": [
+      "models = {",
+      "    '${1:Random forest}': ${2:gridsearch_forest},",
+      "    '${3:XGBoost}': ${4:gridsearch_xgb},",
+      "}",
+      "comparison = pd.DataFrame(",
+      "    {",
+      "        name: {",
+      "            'accuracy_train': model.score(X_train_p, Y_train),",
+      "            'accuracy_test': model.score(X_test_p, Y_test),",
+      "            'f1_test': f1_score(Y_test, model.predict(X_test_p), average='${5|binary,macro,weighted|}'),",
+      "        }",
+      "        for name, model in models.items()",
+      "    }",
+      ").T",
+      "comparison['ecart'] = comparison['accuracy_train'] - comparison['accuracy_test']",
+      "display(comparison.sort_values(by='accuracy_test', ascending=False).round(3))",
+      "# Lecture : meilleur accuracy_test ET petit écart. Gros écart = surapprentissage",
+      "$0"
+    ]
+  },
+
+  "ML · Imports séries temporelles": {
+    "scope": "python",
+    "prefix": "ml-imports-ts",
+    "description": "Imports time series : Prophet, yfinance, plotly go, MSE / MAE. Complète ml-imports",
+    "body": [
+      "import numpy as np",
+      "import pandas as pd",
+      "import plotly.express as px",
+      "import plotly.graph_objects as go",
+      "import yfinance as yf  # uv add yfinance",
+      "from IPython.display import display",
+      "from prophet import Prophet  # uv add prophet",
+      "from sklearn.metrics import mean_absolute_error, mean_squared_error",
+      "$0"
+    ]
+  },
+
+  "TS · Charger un cours de bourse (yfinance)": {
+    "scope": "python",
+    "prefix": "ml-ts-yf",
+    "description": "yf.download : index = Date, colonnes Close / High / Low / Open / Volume, + courbe",
+    "body": [
+      "${1:data} = yf.download('${2:AAPL}', '${3:2017-01-01}', '${4:2020-01-01}', multi_level_index=False)",
+      "display(${1:data}.head())",
+      "px.line(x=${1:data}.index, y=${1:data}['${5:Open}']).show()",
+      "$0"
+    ]
+  },
+
+  "TS · Charger un CSV daté": {
+    "scope": "python",
+    "prefix": "ml-ts-load",
+    "description": "read_csv avec la date en index (DatetimeIndex), tri chronologique, doublons retirés, filtre sur la date de début",
+    "body": [
+      "${1:dataset} = pd.read_csv('${2:src/data.csv}', index_col=${3:0}, parse_dates=True)",
+      "${1:dataset} = ${1:dataset}.sort_index()  # ordre chronologique obligatoire",
+      "${1:dataset} = ${1:dataset}[~${1:dataset}.index.duplicated()]  # une seule ligne par date",
+      "${1:dataset} = ${1:dataset}.loc[${1:dataset}.index >= '${4:2008-01-01}']",
+      "print(${1:dataset}.shape, '|', ${1:dataset}.index.min(), '→', ${1:dataset}.index.max())",
+      "display(${1:dataset}.head())",
+      "$0"
+    ]
+  },
+
+  "TS · Features calendaires (EDA)": {
+    "scope": "python",
+    "prefix": "ml-ts-features",
+    "description": "create_features : hour, dayofweek, month, year… tirés de l'index date, puis tableau features_and_target (features + cible)",
+    "body": [
+      "def create_features(df, label=None):",
+      "    df = df.copy()",
+      "    df['date'] = df.index  # l'index date recopié en colonne, pour utiliser .dt",
+      "    df['hour'] = df['date'].dt.hour",
+      "    df['dayofweek'] = df['date'].dt.dayofweek  # 0 = lundi",
+      "    df['quarter'] = df['date'].dt.quarter",
+      "    df['month'] = df['date'].dt.month",
+      "    df['year'] = df['date'].dt.year",
+      "    df['dayofyear'] = df['date'].dt.dayofyear",
+      "    df['dayofmonth'] = df['date'].dt.day",
+      "    df['weekofyear'] = df['date'].dt.isocalendar().week.astype(int)",
+      "    feature_cols = [",
+      "        'hour', 'dayofweek', 'quarter', 'month', 'year', 'dayofyear', 'dayofmonth', 'weekofyear',",
+      "    ]",
+      "    X = df[feature_cols]",
+      "    if label:  # avec label : renvoie les features ET la cible",
+      "        return X, df[label]",
+      "    return X",
+      "",
+      "",
+      "X, Y = create_features(${1:dataset}, label='${2:PJME_MW}')",
+      "features_and_target = pd.concat([X, Y], axis=1)  # axis=1 : colle côte à côte",
+      "display(features_and_target.head())",
+      "$0"
+    ]
+  },
+
+  "TS · Nuages de points par feature calendaire": {
+    "scope": "python",
+    "prefix": "ml-ts-scatter",
+    "description": "Nuages de points de la cible contre les features calendaires (hour, dayofweek…), colorés par heure, pour voir les saisonnalités. Après ml-ts-features",
+    "body": [
+      "px.scatter(${1:features_and_target}, x='hour', y='${2:PJME_MW}').show()",
+      "for col in [${3:'dayofweek', 'weekofyear', 'year'}]:",
+      "    px.scatter(${1:features_and_target}, x=col, y='${2:PJME_MW}', color='${4:hour}').show()",
+      "# Vague sur hour = saisonnalité journalière ; week-end plus bas = hebdomadaire ; bosses sur weekofyear = annuelle",
+      "$0"
+    ]
+  },
+
+  "TS · Lissage (moyenne mobile + exponentiel)": {
+    "scope": "python",
+    "prefix": "ml-ts-smooth",
+    "description": "Moyenne globale, moyenne mobile (rolling) et lissage exponentiel (ewm) + MSE de chaque lissage par rapport à la série",
+    "body": [
+      "col = '${2:Open}'",
+      "${1:data}['mean'] = ${1:data}[col].mean()  # moyenne globale : une ligne droite",
+      "${1:data}['moving_avg'] = ${1:data}[col].rolling(window=${3:7}).mean()  # moyenne des 7 derniers points",
+      "${1:data}['exp_smooth'] = ${1:data}[col].ewm(alpha=${4:0.3}).mean()  # alpha grand = colle aux points récents",
+      "px.line(${1:data}, x=${1:data}.index, y=[col, 'mean', 'moving_avg', 'exp_smooth']).show()",
+      "for smooth in ['mean', 'moving_avg', 'exp_smooth']:",
+      "    mse = np.mean((${1:data}[col] - ${1:data}[smooth]) ** 2)  # NaN du début de rolling ignorés",
+      "    print(f'MSE {smooth} : {mse:.2f}')",
+      "$0"
+    ]
+  },
+
+  "TS · Stationnarité + ACF / PACF": {
+    "scope": "python",
+    "prefix": "ml-ts-acf",
+    "description": "Test ADF (stationnaire si p-value < 0.05), graphiques ACF et PACF pour raisonner sur les ordres ARIMA (p, d, q)",
+    "body": [
+      "import matplotlib.pyplot as plt",
+      "from statsmodels.graphics.tsaplots import plot_acf, plot_pacf  # uv add statsmodels",
+      "from statsmodels.tsa.stattools import adfuller",
+      "",
+      "serie = ${1:data}['${2:Open}'].dropna()",
+      "# serie = serie.diff().dropna()  # différencier (le d d'ARIMA) si la série n'est pas stationnaire",
+      "print(f'p-value ADF : {adfuller(serie)[1]:.4f}  (< 0.05 → stationnaire)')",
+      "plot_acf(serie, lags=${3:40})  # corrélation avec le passé → aide à choisir q (MA)",
+      "plot_pacf(serie, lags=${3:40})  # corrélation directe, sans les intermédiaires → aide à choisir p (AR)",
+      "plt.show()",
+      "$0"
+    ]
+  },
+
+  "TS · Split chronologique": {
+    "scope": "python",
+    "prefix": "ml-ts-split",
+    "description": "Coupe à une date : train = passé, test = futur. Jamais de train_test_split aléatoire sur une série temporelle",
+    "body": [
+      "split_date = '${2:2015-01-01}'",
+      "${3:train} = ${1:dataset}.loc[${1:dataset}.index <= split_date].copy()",
+      "${4:test} = ${1:dataset}.loc[${1:dataset}.index > split_date].copy()",
+      "# Date dans une colonne ds au lieu de l'index : p_df.loc[p_df['ds'] < split_date, :] / >= split_date",
+      "print('train :', ${3:train}.shape, '| test :', ${4:test}.shape)",
+      "",
+      "fig = go.Figure()",
+      "fig.add_trace(go.Scatter(x=${3:train}.index, y=${3:train}['${5:PJME_MW}'], name='train'))",
+      "fig.add_trace(go.Scatter(x=${4:test}.index, y=${4:test}['${5:PJME_MW}'], name='test'))",
+      "fig.show()",
+      "$0"
+    ]
+  },
+
+  "TS · Format Prophet (ds, y)": {
+    "scope": "python",
+    "prefix": "ml-ts-prophet-df",
+    "description": "Prophet exige une colonne ds (date) et une colonne y (cible). Part d'un DataFrame dont la date est en index",
+    "body": [
+      "cols = {'${3:Datetime}': 'ds', '${4:PJME_MW}': 'y'}  # nom de l'index date, nom de la cible",
+      "train_p = ${1:train}.reset_index().rename(columns=cols)",
+      "test_p = ${2:test}.reset_index().rename(columns=cols)",
+      "# Dates avec fuseau horaire (erreur Prophet) : train_p['ds'] = train_p['ds'].dt.tz_localize(None)",
+      "display(train_p.head())",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet : fit + prévision sur le test": {
+    "scope": "python",
+    "prefix": "ml-ts-prophet",
+    "description": "Prophet de base : fit sur train_p, predict sur test_p, colonnes yhat + composantes (trend, saisonnalités)",
+    "body": [
+      "${1:m} = Prophet()",
+      "${1:m}.fit(train_p)  # colonnes ds et y obligatoires",
+      "${2:forecast} = ${1:m}.predict(test_p)  # seule la colonne ds est lue (+ les régresseurs s'il y en a)",
+      "display(${2:forecast}[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].head())  # yhat = prévision",
+      "fig = ${1:m}.plot_components(${2:forecast})  # trend + saisonnalités (yearly, weekly, daily)",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet : prévoir le futur": {
+    "scope": "python",
+    "prefix": "ml-ts-future",
+    "description": "make_future_dataframe : ajoute n périodes après la fin du train, puis predict + graphiques",
+    "body": [
+      "future = ${1:m}.make_future_dataframe(periods=${2:100}, freq='${3|D,h,W,MS|}')  # historique + n périodes",
+      "${4:forecast} = ${1:m}.predict(future)",
+      "display(${4:forecast}[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())",
+      "fig = ${1:m}.plot(${4:forecast})  # points noirs = réel, ligne = prévision, bande = incertitude",
+      "fig = ${1:m}.plot_components(${4:forecast})",
+      "$0"
+    ]
+  },
+
+  "TS · Graphique réel vs prévision": {
+    "scope": "python",
+    "prefix": "ml-ts-plot",
+    "description": "Superpose le réel (test_p) et yhat (forecast). Zoom optionnel sur une période (1er mois, 1re semaine)",
+    "body": [
+      "fig = go.Figure()",
+      "fig.add_trace(go.Scatter(x=test_p['ds'], y=test_p['y'], name='réel'))",
+      "fig.add_trace(go.Scatter(x=${1:forecast}['ds'], y=${1:forecast}['yhat'], name='prévision'))",
+      "# fig.update_xaxes(range=['${2:2015-01-01}', '${3:2015-02-01}'])  # zoom sur une période",
+      "fig.show()",
+      "$0"
+    ]
+  },
+
+  "TS · Métriques MSE / MAE / MAPE": {
+    "scope": "python",
+    "prefix": "ml-ts-metrics",
+    "description": "Vérifie que réel et prévision sont alignés, puis ts_metrics + dictionnaire results_ts (une ligne par modèle). MAE = erreur moyenne dans l'unité de y, MAPE = erreur moyenne en %",
+    "body": [
+      "def ts_metrics(y_true, y_pred):",
+      "    y_true, y_pred = np.array(y_true), np.array(y_pred)",
+      "    return {",
+      "        'MSE': mean_squared_error(y_true, y_pred),  # erreurs au carré : punit les gros écarts",
+      "        'MAE': mean_absolute_error(y_true, y_pred),  # erreur moyenne, dans l'unité de y",
+      "        'MAPE_%': np.mean(np.abs((y_true - y_pred) / y_true)) * 100,  # erreur moyenne en %",
+      "    }",
+      "",
+      "",
+      "# Prophet trie ses prévisions par date : le réel doit être dans le même ordre, sinon les notes sont fausses",
+      "same_order = (${1:test_p}['ds'].to_numpy() == ${2:forecast}['ds'].to_numpy()).all()",
+      "assert same_order, 'Réel et prévision pas alignés : trier les données par date (sort_index) et relancer'",
+      "",
+      "results_ts = {}",
+      "results_ts['${3:Prophet baseline}'] = ts_metrics(${1:test_p}['y'], ${2:forecast}['yhat'])",
+      "display(pd.DataFrame(results_ts).T.round(2))",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet + jours fériés du pays": {
+    "scope": "python",
+    "prefix": "ml-ts-holidays",
+    "description": "add_country_holidays AVANT le fit : ajoute la composante holidays h(t)",
+    "body": [
+      "${1:m_hol} = Prophet()",
+      "${1:m_hol}.add_country_holidays(country_name='${2|US,FR|}')  # avant le fit",
+      "${1:m_hol}.fit(train_p)",
+      "print(${1:m_hol}.train_holiday_names.tolist())",
+      "${3:forecast_hol} = ${1:m_hol}.predict(test_p)",
+      "fig = ${1:m_hol}.plot_components(${3:forecast_hol})  # un graphique holidays en plus",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet + jours fériés (DataFrame perso)": {
+    "scope": "python",
+    "prefix": "ml-ts-holidays-df",
+    "description": "Prophet(holidays=df) : construit holiday_df (ds, holiday) avec toutes les lignes qui tombent un jour férié fédéral US. Marche pour des données à l'heure comme au jour",
+    "body": [
+      "from pandas.tseries.holiday import USFederalHolidayCalendar",
+      "",
+      "cal = USFederalHolidayCalendar()",
+      "holiday_dates = [d.date() for d in cal.holidays()]  # tous les jours fériés, sans l'heure",
+      "",
+      "# On part du tableau complet (train + test) : le modèle doit connaître les jours fériés des deux périodes",
+      "${1:dataset}['date'] = ${1:dataset}.index.date  # 1. le jour sans l'heure",
+      "${1:dataset}['is_holiday'] = ${1:dataset}['date'].isin(holiday_dates)  # 2. férié : True / False",
+      "holiday_df = ${1:dataset}.loc[${1:dataset}['is_holiday']].reset_index()  # 3. garder les lignes fériées",
+      "holiday_df = holiday_df.rename(columns={'${2:Datetime}': 'ds'})",
+      "holiday_df['holiday'] = 'USFederalHoliday'  # 4. le nom de l'événement",
+      "holiday_df = holiday_df[['ds', 'holiday']]  # 5. ne garder que les deux colonnes utiles",
+      "# Événement perso en plus : pd.concat([holiday_df, pd.DataFrame({'ds': pd.to_datetime(['2019-11-29']), 'holiday': 'promo'})])",
+      "",
+      "${3:m_hol} = Prophet(holidays=holiday_df)",
+      "${3:m_hol}.fit(train_p)",
+      "${4:forecast_hol} = ${3:m_hol}.predict(test_p)",
+      "fig = ${3:m_hol}.plot_components(${4:forecast_hol})",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet + régresseur": {
+    "scope": "python",
+    "prefix": "ml-ts-regressor",
+    "description": "add_regressor : variable explicative en plus du temps. La colonne doit exister dans le train ET dans le DataFrame de prédiction",
+    "body": [
+      "${1:m_reg} = Prophet()",
+      "${1:m_reg}.add_regressor('${2:msft_stock_price}')  # avant le fit",
+      "${1:m_reg}.fit(train_p)  # train_p contient ds, y et la colonne du régresseur",
+      "${3:forecast_reg} = ${1:m_reg}.predict(test_p)  # test_p doit contenir la colonne du régresseur, sans NaN",
+      "fig = ${1:m_reg}.plot(${3:forecast_reg})",
+      "$0"
+    ]
+  },
+
+  "TS · Prophet : comparer plusieurs dates de coupe": {
+    "scope": "python",
+    "prefix": "ml-ts-backtest",
+    "description": "Réentraîne Prophet pour chaque date de coupe (train avant, test après) et affiche le MAPE. p_df = DataFrame complet avec ds et y",
+    "body": [
+      "def prophet_mape(p_df, split_date, regressors=()):",
+      "    train_p = p_df.loc[p_df['ds'] < split_date, :]",
+      "    test_p = p_df.loc[p_df['ds'] >= split_date, :]",
+      "    m = Prophet()",
+      "    for regressor in regressors:",
+      "        m.add_regressor(regressor)",
+      "    m.fit(train_p)",
+      "    forecast = m.predict(test_p)",
+      "    y_true, y_pred = test_p['y'].to_numpy(), forecast['yhat'].to_numpy()",
+      "    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100",
+      "",
+      "",
+      "for split_date in [${2:'2020-03-11', '2020-04-11', '2020-05-11'}]:",
+      "    mape = prophet_mape(${1:p_df}, split_date, regressors=[${3}])",
+      "    print(f'coupe {split_date} → MAPE test : {mape:.2f} %')",
+      "$0"
+    ]
+  },
+
+  "ML · Imports clustering (K-means)": {
+    "scope": "python",
+    "prefix": "ml-imports-km",
+    "description": "Imports non supervisé : KMeans, MiniBatchKMeans, silhouette, scaler / encoder, plotly, matplotlib. Se suffit à lui-même",
+    "body": [
+      "import matplotlib.pyplot as plt",
+      "import numpy as np",
+      "import pandas as pd",
+      "import plotly.express as px",
+      "from IPython.display import display",
+      "from sklearn.cluster import KMeans, MiniBatchKMeans",
+      "from sklearn.compose import ColumnTransformer",
+      "from sklearn.metrics import accuracy_score, silhouette_score",
+      "from sklearn.preprocessing import OneHotEncoder, StandardScaler",
+      "$0"
+    ]
+  },
+
+  "KM · Préparer les données (sans Y, sans split)": {
+    "scope": "python",
+    "prefix": "ml-km-preproc",
+    "description": "Non supervisé : pas de cible, pas de train / test. Scaler sur les nombres (obligatoire : K-means mesure des distances), one-hot sur les catégories. Donne X_p",
+    "body": [
+      "# Pas de cible Y, pas de split : tout le tableau sert. Retirer avant les colonnes inutiles (ml-dropcols : ID…)",
+      "numeric_features = ${1:dataset}.select_dtypes(include='number').columns.tolist()",
+      "categorical_features = ${1:dataset}.select_dtypes(exclude='number').columns.tolist()",
+      "preprocessor = ColumnTransformer([",
+      "    ('num', StandardScaler(), numeric_features),  # même échelle pour tous : sinon la grande colonne écrase les autres",
+      "    ('cat', OneHotEncoder(drop='first', sparse_output=False), categorical_features),",
+      "])",
+      "X_p = preprocessor.fit_transform(${1:dataset})",
+      "print(X_p[0:5])  # np.array → pas de .head()",
+      "# ⚠️ à lancer AVANT d'ajouter la colonne Cluster_KMeans, sinon elle devient une feature",
+      "$0"
+    ]
+  },
+
+  "KM · Choisir K : méthode du coude (elbow)": {
+    "scope": "python",
+    "prefix": "ml-km-elbow",
+    "description": "Boucle sur K, inertie (WCSS : somme des distances au carré entre chaque point et son centre) + courbe. On cherche le coude : là où la courbe arrête de chuter",
+    "body": [
+      "k_values = list(range(1, ${1:11}))",
+      "wcss = []",
+      "for k in k_values:",
+      "    kmeans = KMeans(n_clusters=k, random_state=${2:0}, n_init='auto')",
+      "    kmeans.fit(X_p)",
+      "    wcss.append(kmeans.inertia_)  # inertie : baisse toujours quand K monte",
+      "fig = px.line(x=k_values, y=wcss, markers=True, title='Elbow method')",
+      "fig.update_layout(xaxis_title='Nombre de clusters K', yaxis_title='Inertie (WCSS)')",
+      "fig.show()",
+      "# Lecture : garder le K du coude (après lui, ajouter un cluster ne fait presque plus baisser l'inertie)",
+      "$0"
+    ]
+  },
+
+  "KM · Choisir K : score silhouette": {
+    "scope": "python",
+    "prefix": "ml-km-silhouette",
+    "description": "Boucle sur K à partir de 2, silhouette moyenne (de -1 à 1 : proche de 1 = groupes compacts et bien séparés) + barres. On prend le K le plus haut",
+    "body": [
+      "k_values = list(range(2, ${1:11}))  # 2 minimum : il faut au moins deux groupes pour les comparer",
+      "sil = []",
+      "for k in k_values:",
+      "    kmeans = KMeans(n_clusters=k, random_state=${2:0}, n_init='auto')",
+      "    sil.append(silhouette_score(X_p, kmeans.fit_predict(X_p)))",
+      "fig = px.bar(x=k_values, y=sil, title='Silhouette score par K')",
+      "fig.update_layout(xaxis_title='Nombre de clusters K', yaxis_title='Silhouette', xaxis_type='category')",
+      "fig.show()",
+      "print('Meilleur K (silhouette) :', k_values[int(np.argmax(sil))])",
+      "# Coude et silhouette peuvent ne pas être d'accord : trancher avec le sens métier",
+      "$0"
+    ]
+  },
+
+  "KM · K-means : fit + colonne cluster": {
+    "scope": "python",
+    "prefix": "ml-km-fit",
+    "description": "KMeans avec le K retenu (init k-means++ par défaut), numéro de cluster ajouté au tableau, taille de chaque groupe",
+    "body": [
+      "kmeans = KMeans(n_clusters=${1:3}, random_state=${2:0}, n_init='auto')  # init='k-means++' par défaut",
+      "${3:dataset}['Cluster_KMeans'] = kmeans.fit_predict(X_p)  # fit + numéro de groupe de chaque ligne",
+      "print(f'Inertie : {kmeans.inertia_:.1f} | silhouette : {silhouette_score(X_p, kmeans.labels_):.3f}')",
+      "display(${3:dataset}['Cluster_KMeans'].value_counts().sort_index())  # taille de chaque groupe",
+      "# Les numéros de cluster n'ont aucun sens en eux-mêmes (0 n'est pas « plus petit » que 1)",
+      "$0"
+    ]
+  },
+
+  "KM · Profil des clusters (interprétation)": {
+    "scope": "python",
+    "prefix": "ml-km-profile",
+    "description": "Moyenne de chaque colonne numérique par cluster, dans les unités d'origine, + effectif : sert à donner un nom métier à chaque segment",
+    "body": [
+      "profile = ${1:dataset}.groupby('Cluster_KMeans')[numeric_features].mean().round(1)",
+      "profile['nb_lignes'] = ${1:dataset}['Cluster_KMeans'].value_counts()",
+      "display(profile)  # une ligne par cluster : c'est ce tableau qu'on commente",
+      "# Colonne catégorielle : pd.crosstab(${1:dataset}['Cluster_KMeans'], ${1:dataset}['${2:Genre}'], normalize='index').round(2)",
+      "$0"
+    ]
+  },
+
+  "KM · Nuage de points 2D par cluster": {
+    "scope": "python",
+    "prefix": "ml-km-scatter",
+    "description": "Deux colonnes d'origine en x / y, une couleur par cluster",
+    "body": [
+      "px.scatter(",
+      "    ${1:dataset},",
+      "    x='${2:Annual Income (k$)}',",
+      "    y='${3:Spending Score (1-100)}',",
+      "    color=${1:dataset}['Cluster_KMeans'].astype(str),  # str : couleurs bien séparées, pas un dégradé",
+      "    labels={'color': 'Cluster'},",
+      ").show()",
+      "$0"
+    ]
+  },
+
+  "KM · Nuage de points 3D par cluster": {
+    "scope": "python",
+    "prefix": "ml-km-3d",
+    "description": "Trois colonnes d'origine en x / y / z, une couleur par cluster (graphique qu'on peut faire tourner)",
+    "body": [
+      "fig = px.scatter_3d(",
+      "    ${1:dataset},",
+      "    x='${2:Annual Income (k$)}',",
+      "    y='${3:Spending Score (1-100)}',",
+      "    z='${4:Age}',",
+      "    color=${1:dataset}['Cluster_KMeans'].astype(str),",
+      "    labels={'color': 'Cluster'},",
+      ")",
+      "fig.update_traces(marker_size=4)",
+      "fig.show()",
+      "$0"
+    ]
+  },
+
+  "KM · Cluster d'une nouvelle observation": {
+    "scope": "python",
+    "prefix": "ml-km-predict",
+    "description": "Nouvelle ligne : même preprocessor (transform seul, pas de fit), puis predict = centre le plus proche",
+    "body": [
+      "new = pd.DataFrame([{${1:'Genre': 'Male', 'Age': 30, 'Annual Income (k$)': 60, 'Spending Score (1-100)': 50}}])",
+      "new_p = preprocessor.transform(new)  # transform seul : on réutilise l'échelle apprise",
+      "print('Cluster :', kmeans.predict(new_p)[0])",
+      "$0"
+    ]
+  },
+
+  "KM · Compression d'image (palette de K couleurs)": {
+    "scope": "python",
+    "prefix": "ml-km-image",
+    "description": "Chaque pixel = une ligne (R, G, B). MiniBatchKMeans regroupe les couleurs en K clusters, chaque pixel prend la couleur de son centre. Affiche original et compressé",
+    "body": [
+      "from sklearn.datasets import load_sample_image",
+      "",
+      "image = ${1:load_sample_image('china.jpg')}  # tableau (hauteur, largeur, 3), valeurs 0 à 255",
+      "print(image.shape)",
+      "pixels = (image / 255).reshape(-1, 3)  # 0 à 1, puis une ligne par pixel : (n_pixels, 3)",
+      "kmeans_img = MiniBatchKMeans(n_clusters=${2:16}, random_state=${3:0}, n_init='auto')  # MiniBatch : rapide sur beaucoup de lignes",
+      "kmeans_img.fit(pixels)",
+      "new_colors = kmeans_img.cluster_centers_[kmeans_img.predict(pixels)]  # chaque pixel → couleur de son centre",
+      "image_recolored = new_colors.reshape(image.shape)  # retour à la forme de l'image",
+      "",
+      "_, axes = plt.subplots(1, 2, figsize=(12, 5))",
+      "for ax, img, title in zip(axes, [image, image_recolored], ['Original', '${2:16} couleurs']):",
+      "    ax.imshow(img)",
+      "    ax.set_title(title)",
+      "    ax.axis('off')",
+      "plt.tight_layout()",
+      "plt.show()",
+      "$0"
+    ]
+  },
+
+  "KM · Centres des clusters en images": {
+    "scope": "python",
+    "prefix": "ml-km-centroids",
+    "description": "Quand chaque ligne est une image aplatie (digits 8×8 = 64 colonnes) : affiche chaque centre comme une image = le « portrait moyen » du groupe",
+    "body": [
+      "centroids = ${1:kmeans}.cluster_centers_.reshape(-1, ${2:8}, ${3:8})  # (nb clusters, hauteur, largeur)",
+      "_, axes = plt.subplots(2, ${4:5}, figsize=(12, 5))",
+      "for i, ax in enumerate(axes.ravel()):",
+      "    ax.imshow(centroids[i], cmap='gray')",
+      "    ax.set_title(f'Centroid {i}')",
+      "    ax.axis('off')",
+      "plt.tight_layout()",
+      "plt.show()",
+      "$0"
+    ]
+  },
+
+  "KM · Comparer les clusters à de vraies étiquettes": {
+    "scope": "python",
+    "prefix": "ml-km-map",
+    "description": "Seulement si on connaît les vraies classes (bac à sable). Le n° de cluster est arbitraire : on donne à chaque cluster sa classe majoritaire (mode), puis accuracy et tableau réel / prédit",
+    "body": [
+      "from scipy.stats import mode",
+      "",
+      "# ${1:clusters} = kmeans.fit_predict(...) ; ${2:target} = les vraies classes",
+      "labels = np.zeros_like(${1:clusters})",
+      "for i in np.unique(${1:clusters}):",
+      "    mask = ${1:clusters} == i",
+      "    labels[mask] = mode(${2:target}[mask])[0]  # classe la plus fréquente dans ce cluster",
+      "print(f'accuracy brute        : {accuracy_score(${2:target}, ${1:clusters}):.3f}  (numéros arbitraires → sans valeur)')",
+      "print(f'accuracy après remap  : {accuracy_score(${2:target}, labels):.3f}')",
+      "display(pd.crosstab(${2:target}, labels, rownames=['réel'], colnames=['prédit']))  # matrice de confusion",
+      "$0"
+    ]
+  }
+}
