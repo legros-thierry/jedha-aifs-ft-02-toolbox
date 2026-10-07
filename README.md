@@ -17,3 +17,12 @@ Dans une cellule Python, taper le préfixe puis Tab.
 - `snippets/` : fichiers `.code-snippets`
 - `templates/` : fichiers `.py` réutilisables
 - `notebooks/` : exemples perso
+
+## Contribuer
+1. Cliquer **Fork** (en haut à droite) pour copier le dépôt sur son compte
+2. Ajouter son fichier dans `snippets/`, `templates/` ou `notebooks/` ou autre
+3. **Contribute → Open pull request** : Thierry valide et fusionne
+
+Contributeurs réguliers : donnez-moi votre pseudo GitHub, je vous ajoute en accès direct.
+EOF
+git add README.md && git commit -m "README : comment contribuer" && git push
