@@ -1,4 +1,4 @@
-# Toolbox de la classe – JEDHA AI Fullstack FT-02
+# Toolbox – JEDHA AI Fullstack FT-02
 
 Snippets VS Code et templates partagés entre nous.
 
@@ -9,7 +9,7 @@ Snippets VS Code et templates partagés entre nous.
 - Jamais de clé d'API ni de fichier `.env`
 - `git pull` avant chaque `git push`
 
-## Utiliser les snippets d'un camarade
+## Utiliser les snippets 
 Copier le fichier voulu dans le dossier `.vscode/` de son propre projet.
 Dans une cellule Python, taper le préfixe puis Tab.
 
