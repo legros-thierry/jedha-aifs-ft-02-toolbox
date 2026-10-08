@@ -2,7 +2,7 @@
 
 Snippets VS Code, templates et autres partagés entre nous.
 
-## Règles pour s'y retrouvé si on est plusieurs à pousser des snippets
+## Règles pour s'y retrouver si on est plusieurs à pousser des snippets
 - Un fichier de snippets par personne : `snippets/<prenom>-<theme>.code-snippets`
 - Chacun son préfixe (ex. `thierry-ml.` pour Thierry) pour éviter les doublons
 - Uniquement notre propre code : pas d'énoncés ni de corrigés JEDHA
